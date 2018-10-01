@@ -14,5 +14,4 @@ STORAGE_MQ_SERVER  rabbitmq server
 docker run -d --hostname storage-rabbit -p 5672:5672 --name storage-rabbit rabbitmq:3
 
 STORAGE_PORT="localhost:4000" STORAGE_ROOT="/tmp" STORAGE_MQ_SERVER="amqp://guest:guest@localhost:5672 go run main.go"
-2018/10/01 22:07:36 storage server listen at port localhost:4000
 ```
