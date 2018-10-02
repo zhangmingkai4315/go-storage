@@ -17,6 +17,6 @@ func RunDataServer() {
 
 	hostAndPort := os.Getenv("STORAGE_PORT")
 	http.HandleFunc("/objects/", objects.Handler)
-	log.Println("storage server listen at port " + hostAndPort)
+	log.Println("storage data server listen at port " + hostAndPort)
 	log.Fatal(http.ListenAndServe(hostAndPort, nil))
 }
