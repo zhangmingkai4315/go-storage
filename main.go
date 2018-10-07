@@ -21,7 +21,7 @@ func main() {
 			},
 		}, {
 			Name:  "apiServer",
-			Usage: "start a data server for object storage",
+			Usage: "start a api server for object storage",
 			Action: func(c *cli.Context) error {
 				log.Println("starting api server...")
 				cmd.RunAPIServer()

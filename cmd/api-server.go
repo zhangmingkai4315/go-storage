@@ -6,17 +6,16 @@ import (
 	"os"
 
 	"github.com/zhangmingkai4315/go-storage/heartbeat"
+	"github.com/zhangmingkai4315/go-storage/locate"
 	"github.com/zhangmingkai4315/go-storage/objects"
 )
 
+// RunAPIServer start a new api server
 func RunAPIServer() {
-
-	go heartbeat.StartHeartBeat()
-	// go locate.StartLocate()
-	hostAndPort := os.Getenv("STORAGE_PORT")
-	http.HandleFunc("/objects/", objects.Handler)
-	http.HandleFunc("/locate", locate.Handler)
+	hostAndPort := os.Getenv("API_SERVER_PORT")
+	go heartbeat.ListenHeartBeat()
+	http.HandleFunc("/objects/", objects.APIHandler)
+	http.HandleFunc("/locate/", locate.APIHandler)
 	log.Println("storage api server listen at port " + hostAndPort)
 	log.Fatal(http.ListenAndServe(hostAndPort, nil))
-
 }

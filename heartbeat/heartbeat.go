@@ -11,14 +11,14 @@ import (
 )
 
 // StartHeartBeat send heartbeat to rabbit every 5 seconds
-func StartHeartBeat() {
+func StartHeartBeat(server string) {
 	q := lib.NewRabbitMQ(os.Getenv("STORAGE_MQ_SERVER"))
 	defer q.Close()
 	q.DeclareExchange("apiServer", "fanout")
 	q.DeclareExchange("dataServer", "fanout")
 
 	for {
-		q.Publish("apiServer", os.Getenv("STORAGE_PORT"))
+		q.Publish("apiServer", server)
 		time.Sleep(5 * time.Second)
 	}
 }
