@@ -6,17 +6,19 @@
 DATA_SERVER_PORT   storage server listen port default:4000  [data server only]
 API_SERVER_PORT    api server listen port default:4000      [api server only]
 STORAGE_ROOT       storage folder for save files            [data server only]
-STORAGE_MQ_SERVER  rabbitmq server                          
+STORAGE_MQ_SERVER  rabbitmq server
+STORAGE_ES_SERVER  elasticsearch server for store metadata
 ```
 
 ### 2. Development Environment Setup
 
 ```
 docker run -d --hostname storage-rabbit -p 5672:5672 --name storage-rabbit rabbitmq:3
+docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:6.4.1
 
 DATA_SERVER_PORT="localhost:4000" STORAGE_ROOT="/tmp" STORAGE_MQ_SERVER="amqp://guest:guest@localhost:5672" go run main.go dataServer
 
-API_SERVER_PORT="localhost:4001" STORAGE_MQ_SERVER="amqp://guest:guest@localhost:5672" go run main.go apiServer
+API_SERVER_PORT="localhost:4001" STORAGE_ES_SERVER="localhost:9200" STORAGE_MQ_SERVER="amqp://guest:guest@localhost:5672" go run main.go apiServer
 ```
 
 ### 3. Test Method

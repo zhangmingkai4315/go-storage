@@ -14,6 +14,10 @@ func APIHandler(w http.ResponseWriter, r *http.Request) {
 		apiGet(w, r)
 		return
 	}
+	if m == http.MethodDelete {
+		apiDelete(w, r)
+		return
+	}
 	w.WriteHeader(http.StatusMethodNotAllowed)
 }
 
