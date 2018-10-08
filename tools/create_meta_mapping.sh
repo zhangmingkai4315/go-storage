@@ -14,7 +14,7 @@ curl http://$SERVER/metadata -XPUT -H 'Content-Type: application/json' -d '
       "properties":{
         "name":{
           "type":"text",
-          "index":false
+          "fielddata": true
         },
         "version":{
           "type":"integer"
