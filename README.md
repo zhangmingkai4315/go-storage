@@ -26,7 +26,10 @@ API_SERVER_PORT="localhost:4001" STORAGE_ES_SERVER="localhost:9200" STORAGE_MQ_S
 #### upload file 
 
 ```
+echo -n "hello world" | openssl dgst -sha256 -binary | base64
 curl -v localhost:4001/objects/test -XPUT -d "hello world" -H "Digest: SHA-256=uU0nuZNNPgilLlLX2n2r+sSE7+N6U4DukIj3rOLvzek="
+
+curl -v localhost:4001/objects/test -XPUT -d "hello world v2" -H "Digest: SHA-256=k/fkDkJ9ysftPhlB51STXO3YnG6Hl6JlhrzHUNAASKw="
 ```
 
 #### locate file 
