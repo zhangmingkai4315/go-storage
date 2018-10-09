@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,10 +11,10 @@ import (
 )
 
 type Metadata struct {
-	Name    string
-	Version int
-	Size    int64
-	Hash    string
+	Name    string `json:"name"`
+	Version int    `json:"version"`
+	Size    int64  `json:"size"`
+	Hash    string `json:"hash"`
 }
 
 type hit struct {
@@ -83,7 +82,7 @@ func GetMetaData(name string, version int) (Metadata, error) {
 
 func PutMetaData(name string, version int, size int64, hash string) error {
 	doc := fmt.Sprintf(
-		`{"name":"%s","version":"%d","size":"%d","hash":"%s"}`,
+		`{"name":"%s","version":%d,"size":%d,"hash":"%s"}`,
 		name,
 		version,
 		size,
@@ -130,7 +129,6 @@ func SearchAllVersions(name string, from, size int) ([]Metadata, error) {
 		url += "&q=name:" + name
 	}
 	r, err := http.Get(url)
-	log.Printf("url=%s", url)
 	r.Header.Add("Content-Type", "application/json;charset=utf-8")
 	if err != nil {
 		return nil, err

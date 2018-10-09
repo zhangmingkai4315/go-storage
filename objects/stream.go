@@ -3,12 +3,64 @@ package objects
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 type PutStream struct {
 	write *io.PipeWriter
 	c     chan error
+}
+
+type TempPutStream struct {
+	Server string
+	UUID   string
+}
+
+func NewTempPutStream(server, hash string, size int64) (*TempPutStream, error) {
+	request, err := http.NewRequest("POST", "http://"+server+"/temp/"+hash, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("size", fmt.Sprintf("%d", size))
+	client := http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	uuid, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	return &TempPutStream{server, string(uuid)}, nil
+}
+
+func (w *TempPutStream) Write(p []byte) (n int, err error) {
+	request, err := http.NewRequest("PATCH", "http://"+w.Server+"/temp/"+w.UUID, strings.NewReader(string(p)))
+	if err != nil {
+		return 0, err
+	}
+	client := http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return 0, err
+	}
+	if response.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("dataserver return http code %d", response.StatusCode)
+	}
+
+	return len(p), nil
+}
+
+func (w *TempPutStream) Commit(good bool) {
+	method := "DELETE"
+	if good {
+		method = "PUT"
+	}
+	requst, _ := http.NewRequest(method, "http://"+w.Server+"/temp/"+w.UUID, nil)
+	client := http.Client{}
+	client.Do(requst)
 }
 
 func NewPutStream(server, object string) *PutStream {

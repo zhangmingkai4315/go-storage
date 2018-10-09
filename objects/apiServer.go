@@ -22,7 +22,8 @@ func apiPut(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	c, err := storeObject(r.Body, url.PathEscape(hash))
+	size := lib.GetSizeFromHeader(r.Header)
+	c, err := storeObject(r.Body, hash, size)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(c)
@@ -34,7 +35,7 @@ func apiPut(w http.ResponseWriter, r *http.Request) {
 	}
 
 	name := strings.Split(r.URL.EscapedPath(), "/")[2]
-	size := lib.GetSizeFromHeader(r.Header)
+
 	err = lib.AddVersion(name, hash, size)
 	if err != nil {
 		log.Println(err)
@@ -42,36 +43,42 @@ func apiPut(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func storeObject(r io.Reader, object string) (int, error) {
-	stream, err := putStream(object)
+func storeObject(r io.Reader, hash string, size int64) (int, error) {
+
+	if locate.Exist(url.PathEscape(hash)) {
+		return http.StatusOK, nil
+	}
+
+	stream, err := putStream(url.PathEscape(hash), size)
 	if err != nil {
 		return http.StatusServiceUnavailable, err
 	}
-	io.Copy(stream, r)
-	err = stream.Close()
-	if err != nil {
-		return http.StatusInternalServerError, err
+
+	reader := io.TeeReader(r, stream)
+	d := lib.CalculateHash(reader)
+	if d != hash {
+		stream.Commit(false)
+		return http.StatusBadRequest, fmt.Errorf("object hash mismatch, calculated=%s, requested=%s", d, hash)
 	}
+	stream.Commit(true)
 	return http.StatusOK, nil
 }
 
-func putStream(object string) (*PutStream, error) {
+func putStream(hash string, size int64) (*TempPutStream, error) {
 	server := heartbeat.ChooseRandomDataServer()
 	if server == "" {
 		return nil, fmt.Errorf("no data server avaliable")
 	}
-
-	return NewPutStream(server, object), nil
-
+	return NewTempPutStream(server, hash, size)
 }
 
 func apiGet(w http.ResponseWriter, r *http.Request) {
 	name := strings.Split(r.URL.EscapedPath(), "/")[2]
-	versionId := r.URL.Query()["version"]
+	versionID := r.URL.Query()["version"]
 	version := 0
 	var err error
-	if len(versionId) != 0 {
-		version, err = strconv.Atoi(versionId[0])
+	if len(versionID) != 0 {
+		version, err = strconv.Atoi(versionID[0])
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusBadRequest)

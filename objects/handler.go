@@ -23,10 +23,6 @@ func APIHandler(w http.ResponseWriter, r *http.Request) {
 
 func DataHandler(w http.ResponseWriter, r *http.Request) {
 	m := r.Method
-	if m == http.MethodPut {
-		dataPut(w, r)
-		return
-	}
 	if m == http.MethodGet {
 		dataGet(w, r)
 		return
