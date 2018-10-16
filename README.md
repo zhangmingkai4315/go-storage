@@ -23,7 +23,7 @@ API_SERVER_PORT="localhost:4001" STORAGE_ES_SERVER="localhost:9200" STORAGE_MQ_S
 
 ### 3. Test Method
 
-#### upload file 
+#### upload file
 
 ```
 echo -n "hello world" | openssl dgst -sha256 -binary | base64

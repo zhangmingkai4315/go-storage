@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/zhangmingkai4315/go-storage/rs"
+
 	"github.com/zhangmingkai4315/go-storage/heartbeat"
 	"github.com/zhangmingkai4315/go-storage/lib"
 	"github.com/zhangmingkai4315/go-storage/locate"
@@ -65,11 +67,11 @@ func storeObject(r io.Reader, hash string, size int64) (int, error) {
 }
 
 func putStream(hash string, size int64) (*TempPutStream, error) {
-	server := heartbeat.ChooseRandomDataServer()
-	if server == "" {
-		return nil, fmt.Errorf("no data server avaliable")
+	servers := heartbeat.ChooseRandomDataServers(rs.ALL_SHARDS, nil)
+	if len(servers) != rs.ALL_SHARDS {
+		return nil, fmt.Errorf("not enough data servers avaliable")
 	}
-	return NewTempPutStream(server, hash, size)
+	return rs.NewRSPutStream(servers, hash, size)
 }
 
 func apiGet(w http.ResponseWriter, r *http.Request) {

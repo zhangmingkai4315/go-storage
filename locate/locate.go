@@ -12,7 +12,13 @@ import (
 	"time"
 
 	"github.com/zhangmingkai4315/go-storage/lib"
+	"github.com/zhangmingkai4315/go-storage/rs"
 )
+
+type LocateMessage struct {
+	ID   int
+	Addr string
+}
 
 var objects = make(map[string]int)
 
@@ -86,7 +92,7 @@ func APIHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // APIForLocate get server ip hold the file
-func APIForLocate(name string) string {
+func APIForLocate(name string) (locateInfo map[int]string) {
 	q := lib.NewRabbitMQ(os.Getenv("STORAGE_MQ_SERVER"))
 	q.Publish("dataServer", name)
 	c := q.Consume()
@@ -95,11 +101,20 @@ func APIForLocate(name string) string {
 		time.Sleep(time.Second * 2)
 		q.Close()
 	}()
-	msg := <-c
-	s, _ := strconv.Unquote(string(msg.Body))
-	return s
+
+	locateInfo = make(map[int]string)
+	for i := 0; i < rs.ALL_SHARDS; i++ {
+		msg := <-c
+		if len(msg.Body) == 0 {
+			return
+		}
+		var info LocateMessage
+		json.Unmarshal(msg.Body, &info)
+		locateInfo[info.ID] = info.Addr
+	}
+	return
 }
 
 func Exist(name string) bool {
-	return APIForLocate(name) != ""
+	return len(APIForLocate(name)) >= rs.DATA_SHARDS
 }
