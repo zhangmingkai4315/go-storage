@@ -25,17 +25,20 @@ var objects = make(map[string]int)
 var mutex sync.Mutex
 
 // Locate will return file exist or not
-func Locate(hash string) bool {
+func Locate(hash string) int {
 	mutex.Lock()
 	defer mutex.Unlock()
-	_, ok := objects[hash]
-	return ok
+	id, ok := objects[hash]
+	if !ok {
+		return -1
+	}
+	return id
 }
 
-func Add(hash string) {
+func Add(hash string, id int) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	objects[hash] = 1
+	objects[hash] = id
 }
 
 func Del(hash string) {
@@ -59,8 +62,9 @@ func StartLocate() {
 		if err != nil {
 			panic(err)
 		}
-		if Locate(hash) {
-			q.Send(msg.ReplyTo, os.Getenv("DATA_SERVER_PORT"))
+		id := Locate(hash)
+		if id != -1 {
+			q.Send(msg.ReplyTo, LocateMessage{Addr: os.Getenv("DATA_SERVER_PORT"), ID: id})
 		}
 	}
 }
@@ -68,8 +72,18 @@ func StartLocate() {
 func CollectObjects() {
 	files, _ := filepath.Glob(os.Getenv("STORAGE_ROOT" + "/objects/*"))
 	for i := range files {
-		hash := filepath.Base(files[i])
-		objects[hash] = 1
+		// hash := filepath.Base(files[i])
+		// objects[hash] = 1
+		file := strings.Split(filepath.Base(files[i]), ".")
+		if len(file) != 3 {
+			panic(files[i])
+		}
+		hash := file[0]
+		id, err := strconv.Atoi(file[i])
+		if err != nil {
+			panic(err)
+		}
+		objects[hash] = id
 	}
 }
 

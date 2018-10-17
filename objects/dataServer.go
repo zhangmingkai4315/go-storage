@@ -1,14 +1,16 @@
 package objects
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
-	"github.com/zhangmingkai4315/go-storage/lib"
 	"github.com/zhangmingkai4315/go-storage/locate"
 )
 
@@ -34,20 +36,38 @@ func dataGet(w http.ResponseWriter, r *http.Request) {
 	sendFile(w, file)
 }
 
-func getFile(hash string) string {
-	file := os.Getenv("STORAGE_ROOT" + "/objects/" + hash)
-	f, _ := os.Open(file)
+func getFile(name string) string {
+	// file := os.Getenv("STORAGE_ROOT" + "/objects/" + hash)
+	// f, _ := os.Open(file)
 
-	d := url.PathEscape(lib.CalculateHash(f))
-	f.Close()
+	// d := url.PathEscape(lib.CalculateHash(f))
+	// f.Close()
+
+	// if d != hash {
+	// 	log.Println("hash mismatch remove it")
+	// 	locate.Del(hash)
+	// 	os.Remove(file)
+	// 	return ""
+	// }
+	// return file
+	files, _ := filepath.Glob(os.Getenv("STORAGE_ROOT") + "/objects/" + name + ".*")
+	if len(files) != 1 {
+		return ""
+	}
+	file := files[0]
+	h := sha256.New()
+	sendFile(h, file)
+	hash := strings.Split(file, ".")[2]
+	d := url.PathEscape(base64.StdEncoding.EncodeToString(h.Sum(nil)))
 
 	if d != hash {
-		log.Println("hash mismatch remove it")
+		log.Println("object has mismatch remove", file)
 		locate.Del(hash)
 		os.Remove(file)
 		return ""
 	}
 	return file
+
 }
 
 func sendFile(w io.Writer, file string) {

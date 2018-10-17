@@ -98,8 +98,8 @@ func apiGet(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	object := url.PathEscape(meta.Hash)
-	stream, err := getStream(object)
+	hash := url.PathEscape(meta.Hash)
+	stream, err := getStream(hash, meta.Size)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusNotFound)
@@ -108,12 +108,16 @@ func apiGet(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, stream)
 }
 
-func getStream(object string) (io.Reader, error) {
-	server := locate.APIForLocate(object)
-	if server == "" {
-		return nil, fmt.Errorf("object %s locate fail", object)
+func getStream(hash string, size int64) (io.Reader, error) {
+	locateInfo := locate.APIForLocate(hash)
+	if len(locateInfo) < rs.DATA_SHARDS {
+		return nil, fmt.Errorf("object %s locate fail ,result %v", hash, locateInfo)
 	}
-	return NewGetStream(server, object)
+	dataServers := make([]string, 0)
+	if len(locateInfo) != rs.ALL_SHARDS {
+		dataServers = heartbeat.ChooseRandomDataServers(rs.ALL_SHARDS-len(locateInfo), locateInfo)
+	}
+	return rs.NewGetStream(locateInfo, dataServers, hash, size)
 }
 
 func apiDelete(w http.ResponseWriter, r *http.Request) {

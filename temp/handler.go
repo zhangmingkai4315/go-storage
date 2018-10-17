@@ -7,9 +7,12 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/zhangmingkai4315/go-storage/lib"
 
 	"github.com/zhangmingkai4315/go-storage/locate"
 
@@ -41,6 +44,17 @@ type tempInfo struct {
 	UUID string
 	Name string
 	Size int64
+}
+
+func (t *tempInfo) hash() string {
+	s := strings.Split(t.Name, ".")
+	return s[0]
+}
+
+func (t *tempInfo) id() int {
+	s := strings.Split(t.Name, ".")
+	id, _ := strconv.Atoi(s[1])
+	return id
 }
 
 func post(w http.ResponseWriter, r *http.Request) {
@@ -176,12 +190,18 @@ func put(w http.ResponseWriter, r *http.Request) {
 }
 
 func commitTempObject(dataFile string, tempinfo *tempInfo) {
-	err := os.Rename(dataFile, os.Getenv("STORAGE_ROOT")+"/objects/"+tempinfo.Name)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	locate.Add(tempinfo.Name)
+	// err := os.Rename(dataFile, os.Getenv("STORAGE_ROOT")+"/objects/"+tempinfo.Name)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return
+	// }
+	// locate.Add(tempinfo.Name)
+
+	f, _ := os.Open(dataFile)
+	d := url.PathEscape(lib.CalculateHash(f))
+	f.Close()
+	os.Rename(dataFile, os.Getenv("STORAGE_ROOT")+"/objects/"+tempinfo.Name+"."+d)
+	locate.Add(tempinfo.hash(), tempinfo.id())
 }
 
 func del(w http.ResponseWriter, r *http.Request) {
